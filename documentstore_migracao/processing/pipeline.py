@@ -8,7 +8,7 @@ from documentstore_migracao.processing import reading, conversion
 from documentstore.interfaces import Session
 from documentstore.domain import utcnow
 from documentstore.exceptions import AlreadyExists, DoesNotExist
-from documentstore_migracao.utils.xylose_converter import find_documents_bundles
+from documentstore_migracao.utils.xylose_converter import issue_to_kernel
 
 logger = logging.getLogger(__name__)
 
@@ -143,15 +143,14 @@ def link_documents_bundles_with_journals(
 
     journals_bundles = {}
     extract_isis.create_output_dir(output_path)
-
-    journals_as_json = reading.read_json_file(journal_path)
     issues_as_json = reading.read_json_file(issue_path)
-    journals = conversion.conversion_journals_to_kernel(journals_as_json)
     issues = conversion.conversion_issues_to_xylose(issues_as_json)
     issues = filter_issues(issues)
 
-    for journal in journals:
-        journals_bundles[journal["id"]] = find_documents_bundles(journal, issues)
+    for issue in issues:
+        journal_id = issue.data['issue']['v35'][0]['_']
+        journals_bundles.setdefault(journal_id, [])
+        journals_bundles[journal_id].append(issue_to_kernel(issue)['_id']) 
 
     with open(output_path, "w") as output:
         output.write(json.dumps(journals_bundles, indent=4, sort_keys=True))
