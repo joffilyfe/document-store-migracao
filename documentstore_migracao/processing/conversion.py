@@ -5,7 +5,7 @@ from tqdm import tqdm
 from lxml import etree
 from typing import List
 from xylose.scielodocument import Journal, Issue
-from documentstore_migracao.utils import files, xml, string, xylose_converter
+from documentstore_migracao.utils import files, xml, string, xylose_converter, pipelines
 from documentstore_migracao.export.sps_package import SPS_Package
 from documentstore_migracao import config
 
@@ -31,6 +31,9 @@ def convert_article_xml(file_xml_path):
 
     # Remove a TAG <counts> do XML
     xml_sps.transform_article_meta_count()
+
+    context = pipelines.ArticleTransformationsPipeline(etree=xml_sps.xmltree).deploy()
+    xml_sps.xmltree = context.pop("etree")
 
     languages = "-".join(xml_sps.languages)
     _, fname = os.path.split(file_xml_path)
